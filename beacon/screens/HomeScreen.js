@@ -10,59 +10,57 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Constants from 'expo-constants';
-import * as Location from 'expo-location';
-import * as Permissions from 'expo-permissions';
-import { MonoText } from '../components/StyledText';
+import gps from '../components/gps'
 
 export default function HomeScreen() {
-  const [track, setTrack] = useState(false)
+  let loop
   const [location, setLocation] = useState(null)
   const [errMess, setErrMess] = useState(null)
-  const [loaded, setLoaded] = useState(false)
-  console.log(track)
-  const startIt = async () => {
-    let { status } = await Permissions.askAsync(Permissions.LOCATION);
-    if (status !== 'granted') {
-      setErrMess(
-        'Permission to access location was denied',
-      )
+  const [on, setOn] = useState(false)
+  const locateMe = async () => {
+    const local = await gps()
+    console.log(typeof local)
+
+    if(typeof local === 'string'){
+      setErrMess(local)
     }
-    else {
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High
-      });
-      console.log(location)
-      setTrack(true)
-      setLocation(location)
-      console.log('clicked')
+    else{
+      console.log(on)
+      if(setOn) setLocation(local)
     }
+  }
+  const stop=()=>{
+    clearTimeout(loop)
+    setOn(false)
+    setLocation(null)
+  }
+  const start =()=>{
+    locateMe()
+    setOn(true)
+    loop = setTimeout(()=>locateMe(), 10000)
   }
   return (
     <View style={styles.container}>
       <ScrollView
         style={styles.container, styles.centerIt}
         contentContainerStyle={styles.contentContainer}>
-        {track ? (
+        {location ? (
 
           <View>
             <Text style={styles.textColor}>
 
               {JSON.stringify(location)}
             </Text>
-              <Button title = "stop" onPress={()=>setTrack(false)}/>
+              <Button title = "stop" onPress={stop}/>
           </View>
         ) : (<View>
           <Text style={styles.textColor}>{errMess}</Text>
-          <Button title="Start Tracking" onPress={startIt} />
+          <Button title="Start Tracking" onPress={start} />
         </View>)}
       </ScrollView>
 
       <View
         style={[styles.codeHighlightContainer, styles.navigationFilename]}>
-        <MonoText style={styles.codeHighlightText}>
-          navigation/MainTabNavigator.js
-          </MonoText>
       </View>
 
     </View>
